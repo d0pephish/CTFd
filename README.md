@@ -6,6 +6,9 @@
 
 CTFd is a CTF in a can. Easily modifiable and has everything you need to run a jeopardy style CTF.
 
+This is a fork of NYUPoly's CTFd. I'm adding integration with guacamole and openstack api so I can automatically deploy VM instances and provide users access to a linux VM through a web browser. 
+
+
 Install: 
  1. `./prepare.sh` to install dependencies using apt.
  2. Modify [CTFd/config.py](https://github.com/CTFd/CTFd/blob/master/CTFd/config.py) to your liking.
