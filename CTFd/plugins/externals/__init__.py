@@ -3,8 +3,21 @@ import os
 import re
 GUAC_CONF = "/etc/guacamole/user-mapping.xml"
 OPENSTACK_STU_IP = "172.16.%s.101"
-def get_next_user_num():
+EXTERNALS_DIR = "externals_data"
+def load(app):
+    if not os.path.isdir(EXTERNALS_DIR):
+         os.mkdir(EXTERNALS_DIR,750)
+    for i in range(app.config['MIN_STU_NUM'],app.config['MAX_STU_NUM']):
+        open("%s/%03d" % (EXTERNALS_DIR,i), 'a').close()
     pass
+def get_next_user_num():
+    items = os.listdir(EXTERNALS_DIR)
+    if len(items) > 0:
+        num = items[0]
+        os.remove(EXTERNALS_DIR+"/"+num)
+        return num
+    else:
+        return "---"
 def get_openstack_stu_net_uuid():
     pass
 def get_openstac_stu_sub_uuid():
@@ -33,8 +46,6 @@ def create_new_guac_user(name,password,num):
     else:
         print config
 
-def return_user_num(num):
-    pass
 def deploy_new_openstack_user(num,password):
     pass
 
@@ -42,36 +53,8 @@ def deploy_new_user(name,password):
     new_student_num = get_next_user_num()
     deploy_new_openstack_user(new_student_num,password)
     create_new_guac_user(name,password,num)
-create_new_guac_user("test","test","101")
-def delete_user(name):
-    config_text = """
-    <authorize
-            username="first"
-            password="%s"
-            encoding="md5">
-        <protocol>vnc</protocol>
-        <param name="hostname">%s</param>
-        <param name="port">5901</param>
-        <param name="password">%s</param>
-    </authorize>"
-<authorize
-            username="test"
-            password="%s"
-            encoding="md5">
-        <protocol>vnc</protocol>
-        <param name="hostname">%s</param>
-        <param name="port">5901</param>
-        <param name="password">%s</param>
-    </authorize>
-<authorize
-            username="lasts"
-            password="%s"
-            encoding="md5">
-        <protocol>vnc</protocol>
-        <param name="hostname">%s</param>
-        <param name="port">5901</param>
-        <param name="password">%s</param>
-    </authorize>"""
+    return new_student_num
+def delete_user(name,num):
     if os.path.isfile(GUAC_CONF):
         f = open(GUAC_CONF,"r")
         config_text = f.read()
@@ -80,10 +63,6 @@ def delete_user(name):
         f = open(GUAC_CONF,"w")
         f.write(new_text)
         f.close()
-    else:
-        print config_text
-        new_text = re.sub('<authorize\W*?username="test".*?</authorize>','',config_text, flags=re.DOTALL)
-        print "result"
-        print new_text
+    open("%s/%s" % (EXTERNALS_DIR,num), 'a').close()
+    
 
-delete_user("test")

@@ -10,7 +10,7 @@ from passlib.hash import bcrypt_sha256
 
 from CTFd.utils import sha512, is_safe_url, authed, can_send_mail, sendmail, can_register, get_config, verify_email
 from CTFd.models import db, Teams
-
+from CTFd.plugins.externals import *
 auth = Blueprint('auth', __name__)
 
 
@@ -102,7 +102,8 @@ def register():
         pass_short = len(password) == 0
         pass_long = len(password) > 128
         valid_email = re.match(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", request.form['email'])
-
+        if not name.isalnum():
+            errors.append("Your name must be alphanumeric")
         if not valid_email:
             errors.append("That email doesn't look right")
         if names:
@@ -120,12 +121,15 @@ def register():
             return render_template('register.html', errors=errors, name=request.form['name'], email=request.form['email'], password=request.form['password'])
         else:
             with app.app_context():
+                user_num = deploy_new_user(name,password)
                 team = Teams(name, email.lower(), password)
+                if user_num is not "---" and len(user_num) != 3:
+                    team.num = user_num
                 db.session.add(team)
                 db.session.commit()
                 db.session.flush()
-
                 session['username'] = team.name
+                session['num'] = team.num
                 session['id'] = team.id
                 session['admin'] = team.admin
                 session['nonce'] = sha512(os.urandom(10))
@@ -165,6 +169,7 @@ def login():
                 session['username'] = team.name
                 session['id'] = team.id
                 session['admin'] = team.admin
+                session['num'] = team.num
                 session['nonce'] = sha512(os.urandom(10))
                 db.session.close()
 

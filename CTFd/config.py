@@ -113,7 +113,23 @@ class Config(object):
         '^172\.(1[6-9]|2[0-9]|3[0-1])\.',
         '^192\.168\.'
     ]
+    '''
+    GUAC_CONF defines the path of the guacamole configuration that will be used when adding new users
+    '''
+    GUAC_CONF = "/etc/guacamole/user-mapping.xml"
 
+    '''
+    OPENSTACK_STU_IP defines the ip address format for new users
+    '''
+    OPENSTACK_STU_IP = "172.16.%s.101"
+
+    '''
+    MAX_STU_NUM defines the max student number that will be assigned
+    MIN_STU_NUM defines the minimum student number that will be assigned
+       -> both of these values are used by openstack to build a user-specific subnet
+    '''
+    MAX_STU_NUM = 250
+    MIN_STU_NUM = 10
 
     '''
     CACHE_TYPE specifies how CTFd should cache configuration values. If CACHE_TYPE is set to 'redis', CTFd will make use
