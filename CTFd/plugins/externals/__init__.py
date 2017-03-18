@@ -7,8 +7,8 @@ EXTERNALS_DIR = "externals_data"
 def load(app):
     if not os.path.isdir(EXTERNALS_DIR):
          os.mkdir(EXTERNALS_DIR,750)
-    for i in range(app.config['MIN_STU_NUM'],app.config['MAX_STU_NUM']):
-        open("%s/%03d" % (EXTERNALS_DIR,i), 'a').close()
+         for i in range(app.config['MIN_STU_NUM'],app.config['MAX_STU_NUM']):
+             open("%s/%03d" % (EXTERNALS_DIR,i), 'a').close()
     pass
 def get_next_user_num():
     items = os.listdir(EXTERNALS_DIR)
