@@ -7,7 +7,7 @@ import urllib
 from flask import current_app as app, render_template, request, redirect, url_for, session, Blueprint
 from itsdangerous import TimedSerializer, BadTimeSignature, Signer, BadSignature
 from passlib.hash import bcrypt_sha256
-
+from hashlib import md5
 from CTFd.utils import sha512, is_safe_url, authed, can_send_mail, sendmail, can_register, get_config, verify_email
 from CTFd.models import db, Teams
 from CTFd.plugins.externals import *
@@ -62,6 +62,7 @@ def reset_password(data=None):
             return render_template('reset_password.html', errors=['Your link appears broken, please try again.'])
         team = Teams.query.filter_by(name=name).first_or_404()
         team.password = bcrypt_sha256.encrypt(request.form['password'].strip())
+        update_guac_password(team.name,md5(team.password).hexdigest(),team.num)
         db.session.commit()
         db.session.close()
         return redirect(url_for('auth.login'))
@@ -121,8 +122,8 @@ def register():
             return render_template('register.html', errors=errors, name=request.form['name'], email=request.form['email'], password=request.form['password'])
         else:
             with app.app_context():
-                user_num = deploy_new_user(name,password)
                 team = Teams(name, email.lower(), password)
+                user_num = deploy_new_user(name,md5(team.password).hexdigest())
                 if user_num is not "---" and len(user_num) != 3:
                     team.num = user_num
                 db.session.add(team)
@@ -131,6 +132,7 @@ def register():
                 session['username'] = team.name
                 session['num'] = team.num
                 session['id'] = team.id
+                session['guac_pass'] = md5(team.password).hexdigest()
                 session['admin'] = team.admin
                 session['nonce'] = sha512(os.urandom(10))
 
@@ -170,6 +172,7 @@ def login():
                 session['id'] = team.id
                 session['admin'] = team.admin
                 session['num'] = team.num
+                session['guac_pass'] = md5(team.password).hexdigest()
                 session['nonce'] = sha512(os.urandom(10))
                 db.session.close()
 

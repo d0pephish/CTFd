@@ -4,6 +4,8 @@ import re
 from flask import current_app as app, render_template, request, redirect, abort, jsonify, url_for, session, Blueprint, Response, send_file
 from jinja2.exceptions import TemplateNotFound
 from passlib.hash import bcrypt_sha256
+from hashlib import md5
+from CTFd.plugins.externals import *
 
 from CTFd.utils import authed, is_setup, validate_url, get_config, set_config, sha512, cache, ctftime, view_after_ctf, ctf_started, \
     is_admin, hide_scores
@@ -160,6 +162,13 @@ def team(teamid):
             json['solves'].append({'id': x.id, 'chal': x.chalid, 'team': x.teamid})
         return jsonify(json)
 
+@views.route('/guacamole', methods=['GET'])
+def redir_to_guac():
+    if authed():
+        return render_template('guacamole.html', user=session['username'], password=session['guac_pass'])
+    else:
+        return redirect(url_for('auth.login'))
+
 
 @views.route('/profile', methods=['POST', 'GET'])
 def profile():
@@ -201,6 +210,7 @@ def profile():
                                        affiliation=affiliation, country=country, errors=errors)
             else:
                 team = Teams.query.filter_by(id=session['id']).first()
+                old_name = team.name
                 if not get_config('prevent_name_change'):
                     team.name = name
                 if team.email != email.lower():
@@ -211,6 +221,10 @@ def profile():
 
                 if 'password' in request.form.keys() and not len(request.form['password']) == 0:
                     team.password = bcrypt_sha256.encrypt(request.form.get('password'))
+                    update_guac_password(team.name,md5(team.password).hexdigest(),team.num)
+
+                else:
+                    update_guac_name(old_name,team.name)
                 team.website = website
                 team.affiliation = affiliation
                 team.country = country

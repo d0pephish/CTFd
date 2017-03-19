@@ -5,6 +5,7 @@ from CTFd.utils import admins_only, is_admin, unix_time, get_config, \
 from CTFd.models import db, Teams, Solves, Awards, Containers, Challenges, WrongKeys, Keys, Tags, Files, Tracking, Pages, Config, DatabaseError
 from passlib.hash import bcrypt_sha256
 from sqlalchemy.sql import not_
+from CTFd.plugins.externals import *
 
 admin_teams = Blueprint('admin_teams', __name__)
 
@@ -130,6 +131,9 @@ def unban(teamid):
 @admins_only
 def delete_team(teamid):
     try:
+        team = Teams.query.filter_by(id=teamid).first() 
+        name = team.name
+        num = team.num
         WrongKeys.query.filter_by(teamid=teamid).delete()
         Solves.query.filter_by(teamid=teamid).delete()
         Tracking.query.filter_by(team=teamid).delete()
@@ -139,6 +143,7 @@ def delete_team(teamid):
     except DatabaseError:
         return '0'
     else:
+        delete_guac_user(name,num) 
         return '1'
 
 

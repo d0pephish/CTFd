@@ -43,18 +43,30 @@ def create_new_guac_user(name,password,num):
         f = open(GUAC_CONF,"w")
         f.write(config_text)
         f.close()
-    else:
-        print config
+        restart_guac()
 
 def deploy_new_openstack_user(num,password):
     pass
+def restart_guac():
+    os.system("service guacd force-reload")
 
 def deploy_new_user(name,password):
     new_student_num = get_next_user_num()
     deploy_new_openstack_user(new_student_num,password)
-    create_new_guac_user(name,password,num)
+    create_new_guac_user(name,password,new_student_num)
     return new_student_num
-def delete_user(name,num):
+
+def update_guac_name(old,new):
+    f = open(GUAC_CONF, "r")
+    config_old = f.read()
+    f.close()
+    config_new = config_old.replace('username="'+old+'"','username="'+new+'"')
+    f = open(GUAC_CONF, "w")
+    f.write(config_new)
+    f.close()
+    restart_guac()
+    
+def delete_guac_user(name,num):
     if os.path.isfile(GUAC_CONF):
         f = open(GUAC_CONF,"r")
         config_text = f.read()
@@ -64,5 +76,8 @@ def delete_user(name,num):
         f.write(new_text)
         f.close()
     open("%s/%s" % (EXTERNALS_DIR,num), 'a').close()
+    restart_guac()
+def update_guac_password(name,password,num):
+    delete_guac_user(name,num)
+    create_new_guac_user(name,password,num)
     
-

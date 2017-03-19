@@ -1,0 +1,47 @@
+ {% extends "base.html" %}
+
+{% block stylesheets %}
+    <style>
+    hr {
+        margin-top: 0px;
+        padding-bottom: 10px;
+    }
+    .row {
+        margin-bottom: 10px;
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron home">
+    <div class="container">
+        <h1>Workstation</h1>
+    </div>
+</div>
+<div class="container" style="width:100%;">
+{% if user and password %}
+<div class="row" align="center">
+    <form method="post" action="guacamole/login" id="guac_auth" accept-charset='utf-8' auto-complete="off" role="form">
+        <input type="hidden" name="username" value="{{ user }}">
+        <input type="hidden" name="password" value="{{ password }}">
+        <!-- hardcoded creds is bestcoded creds. don't worry, they're not your creds-->
+    </form>
+    <iframe id="guac_iframe" style="display:none;border:none;margin:0px;padding:0px;"></iframe> 
+{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ request.script_root }}/static/{{ ctf_theme() }}/js/style.js"></script>
+    <script type="text/javascript">
+    $.ajax({
+        type: "POST",
+        url: "guacamole/login",
+        data: $( "#guac_auth" ).serialize(),
+        success: function() { 
+        //    window.location = "guacamole/"; 
+        $("#guac_iframe").css("display","block").css("width","100%").css("height",$(window).height() - 198).attr("src","guacamole/");
+        } 
+    });
+    </script>
+{% endblock %}
