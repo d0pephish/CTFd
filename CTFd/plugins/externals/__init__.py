@@ -1,6 +1,7 @@
 import hashlib
 import os
 import re
+from CTFd.plugins.externals.openstacker import openstacker
 GUAC_CONF = "/etc/guacamole/user-mapping.xml"
 OPENSTACK_STU_IP = "172.16.%s.101"
 EXTERNALS_DIR = "externals_data"
@@ -8,7 +9,7 @@ def load(app):
     if not os.path.isdir(EXTERNALS_DIR):
          os.mkdir(EXTERNALS_DIR,750)
          for i in range(app.config['MIN_STU_NUM'],app.config['MAX_STU_NUM']):
-             open("%s/%03d" % (EXTERNALS_DIR,i), 'a').close()
+             open("%s/%d" % (EXTERNALS_DIR,i), 'a').close()
     pass
 def get_next_user_num():
     items = os.listdir(EXTERNALS_DIR)
@@ -18,10 +19,6 @@ def get_next_user_num():
         return num
     else:
         return "---"
-def get_openstack_stu_net_uuid():
-    pass
-def get_openstac_stu_sub_uuid():
-    pass
 def create_new_guac_user(name,password,num):
     h = hashlib.md5(password).hexdigest()
     hostname = OPENSTACK_STU_IP % (num)
@@ -46,12 +43,16 @@ def create_new_guac_user(name,password,num):
         restart_guac()
 
 def deploy_new_openstack_user(num,password):
-    pass
+    openstacked =  openstacker()
+    trunc_password = hashlib.md5(password).hexdigest()[:8]
+    print "truncating password to ", trunc_password
+    openstacked.deploy_new_user(num,trunc_password)
 def restart_guac():
-    os.system("service guacd force-reload")
+    os.system("service guacd restart")
 
 def deploy_new_user(name,password):
     new_student_num = get_next_user_num()
+    print "generated num", new_student_num
     deploy_new_openstack_user(new_student_num,password)
     create_new_guac_user(name,password,new_student_num)
     return new_student_num
@@ -75,8 +76,12 @@ def delete_guac_user(name,num):
         f = open(GUAC_CONF,"w")
         f.write(new_text)
         f.close()
-    open("%s/%s" % (EXTERNALS_DIR,num), 'a').close()
+    if str(num) != "000" and num != "---":
+        open("%s/%s" % (EXTERNALS_DIR,num), 'a').close()
     restart_guac()
+    openstacked = openstacker()
+    openstacked.delete_user(num)
+
 def update_guac_password(name,password,num):
     delete_guac_user(name,num)
     create_new_guac_user(name,password,num)
