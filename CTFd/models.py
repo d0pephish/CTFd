@@ -53,6 +53,22 @@ class Containers(db.Model):
     def __repr__(self):
         return "<Container ID:(0) {1}>".format(self.id, self.name)
 
+class DeployedYamls(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    yaml_name = db.Column(db.String(255))
+    deployed = db.Column(db.Boolean)
+    deployed_name = db.Column(db.String(255))
+    team_name = db.Column(db.String(80))
+
+    def __init__(self,yaml_name, team_name, deployed=False, deployed_name =""):
+        self.yaml_name = yaml_name
+        self.team_name = team_name
+        self.deployed = deployed
+        self.deployed_name = deployed_name
+
+    def __repr__(self):
+        return '<yaml %r>' % self.yaml_name
+
 
 class Challenges(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -60,15 +76,17 @@ class Challenges(db.Model):
     description = db.Column(db.Text)
     max_attempts = db.Column(db.Integer, default=0)
     value = db.Column(db.Integer)
-    category = db.Column(db.String(80))
+    yaml_id = db.Column(db.String(80))
+    category = db.Column(db.String(255))
     type = db.Column(db.Integer)
     hidden = db.Column(db.Boolean)
 
-    def __init__(self, name, description, value, category, type=0):
+    def __init__(self, name, description, value, category, type=0, yaml_id = ""):
         self.name = name
         self.description = description
         self.value = value
         self.category = category
+        self.yaml_id = yaml_id
         self.type = type
         # self.flags = json.dumps(flags)
 
