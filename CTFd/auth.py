@@ -124,7 +124,7 @@ def register():
             with app.app_context():
                 team = Teams(name, email.lower(), password)
                 user_num = deploy_new_user(name,md5(team.password).hexdigest())
-                if user_num is not "---" and len(user_num) != 3:
+                if user_num is not "---":
                     team.num = user_num
                 db.session.add(team)
                 db.session.commit()
@@ -171,6 +171,7 @@ def login():
                 session['username'] = team.name
                 session['id'] = team.id
                 session['admin'] = team.admin
+                print "user with num "+team.num + " logged in"
                 session['num'] = team.num
                 session['guac_pass'] = md5(team.password).hexdigest()
                 session['nonce'] = sha512(os.urandom(10))

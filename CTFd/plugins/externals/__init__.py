@@ -41,12 +41,29 @@ def create_new_guac_user(name,password,num):
         f.write(config_text)
         f.close()
         restart_guac()
-
+def list_available_yamls():
+    return openstacker.list_available_lanes(openstacker)
+def get_deployed_lanes(user,num):
+    openstacked = openstacker()
+    stacks = openstacked.get_deployed_stacks_by_string(user+"_"+str(num)+"_")
+    new_stacks = []
+    for x in stacks:
+        new_stacks.append(x.replace(user+"_"+str(num)+"_","",1))
+    return new_stacks
 def deploy_new_openstack_user(num,password):
     openstacked =  openstacker()
     trunc_password = hashlib.md5(password).hexdigest()[:8]
     print "truncating password to ", trunc_password
     openstacked.deploy_new_user(num,trunc_password)
+
+def deploy_openstack_lane(user,num,lane):
+    if lane in list_available_yamls():
+        openstacked = openstacker()
+        return openstacked.deploy_new_lane(user,num,lane)
+def is_openstack_lane_deployed(user,num,lane):
+    openstacked = openstacker()
+    return openstacked.is_lane_deployed(user,num,lane)
+
 def restart_guac():
     os.system("service guacd restart")
 

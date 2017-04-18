@@ -22,7 +22,16 @@ function loadchalbyname(chalname) {
 
     updateChalWindow(obj);
 }
-
+function deploy_lane(name,obj) {
+    var nonce = $('#nonce').val();
+    $.post(script_root+ '/deploy_lane' , {
+        name: name,
+        nonce: nonce
+    }, function (data) {
+        alert(data);
+        $(obj).remove();
+    });
+}
 function updateChalWindow(obj) {
     $.get(script_root + '/static/original/js/templates/challenges/'+obj.type+'/'+obj.type+'-challenge-modal.hbs', function(template_data){
         $('#chal-window').empty();
@@ -37,6 +46,7 @@ function updateChalWindow(obj) {
         var wrapper  = {
             id: obj.id,
             name: obj.name,
+            deployed: obj.deployed,
             value: obj.value,
             tags: obj.tags,
             desc: marked(obj.description, {'gfm':true, 'breaks':true}),

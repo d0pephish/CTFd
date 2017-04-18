@@ -5,6 +5,7 @@ from CTFd.utils import admins_only, is_admin, unix_time, get_config, \
 from CTFd.models import db, Teams, Solves, Awards, Containers, Challenges, WrongKeys, Keys, Tags, Files, Tracking, Pages, Config, DatabaseError
 from CTFd.plugins.keys import get_key_class, KEY_CLASSES
 from CTFd.plugins.challenges import get_chal_class, CHALLENGE_CLASSES
+from CTFd.plugins.externals import *
 import os
 
 admin_challenges = Blueprint('admin_challenges', __name__)
@@ -24,7 +25,7 @@ def admin_chal_types():
 @admins_only
 def admin_chals():
     if request.method == 'POST':
-        chals = Challenges.query.add_columns('id', 'name', 'value', 'description', 'category', 'hidden', 'max_attempts').order_by(Challenges.value).all()
+        chals = Challenges.query.add_columns('id', 'name', 'value', 'yaml_id', 'description', 'category', 'hidden', 'max_attempts').order_by(Challenges.value).all()
 
         teams_with_points = db.session.query(Solves.teamid).join(Teams).filter(
             Teams.banned == False).group_by(Solves.teamid).count()
@@ -45,6 +46,7 @@ def admin_chals():
                 'description': x.description,
                 'category': x.category,
                 'hidden': x.hidden,
+                'yaml_id' : x.yaml_id,
                 'max_attempts': x.max_attempts,
                 'percentage_solved': percentage
             })
@@ -52,7 +54,7 @@ def admin_chals():
         db.session.close()
         return jsonify(json_data)
     else:
-        return render_template('admin/chals.html')
+        return render_template('admin/chals.html', yamls=list_available_yamls())
 
 
 @admin_challenges.route('/admin/tags/<int:chalid>', methods=['GET', 'POST'])
@@ -141,7 +143,7 @@ def admin_create_chal():
         files = request.files.getlist('files[]')
 
         # Create challenge
-        chal = Challenges(request.form['name'], request.form['desc'], request.form['value'], request.form['category'], int(request.form['chaltype']))
+        chal = Challenges(request.form['name'], request.form['desc'], request.form['value'], request.form['category'], int(request.form['chaltype']), yaml_id = request.form['yaml'])
         if 'hidden' in request.form:
             chal.hidden = True
         else:
@@ -168,7 +170,7 @@ def admin_create_chal():
         db.session.close()
         return redirect(url_for('admin_challenges.admin_chals'))
     else:
-        return render_template('admin/chals/create.html')
+        return render_template('admin/chals/create.html', yamls=list_available_yamls())
 
 
 @admin_challenges.route('/admin/chal/delete', methods=['POST'])
@@ -200,6 +202,7 @@ def admin_update_chal():
     challenge.value = int(request.form.get('value', 0)) if request.form.get('value', 0) else 0
     challenge.max_attempts = int(request.form.get('max_attempts', 0)) if request.form.get('max_attempts', 0) else 0
     challenge.category = request.form['category']
+    challenge.yaml_id = request.form['yaml']
     challenge.hidden = 'hidden' in request.form
     db.session.add(challenge)
     db.session.commit()

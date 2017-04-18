@@ -4,12 +4,23 @@ from CTFd.plugins.externals.openstacker.openstacker_auth import *
 class openstacker:
 
     yaml_paths = {
-                    "new_user" : "yamls/student_station.yaml"
+                    "new_user" : "yamls/student_station.yaml",
+                    "lanes" : "yamls/lanes"
                  }
-
+    @staticmethod
+    def list_available_lanes(self):
+        yaml_list = []
+        import os
+        for f in os.listdir(self.yaml_paths["lanes"]):
+            if f.endswith(".yaml"):
+                yaml_list.append(f)
+        return yaml_list
+   
     def __init__(self):
         print "Openstacker Initialized"
         self.conn = self.authenticate()
+        for lane in self.list_available_lanes(self):
+            self.yaml_paths[lane] = self.yaml_paths["lanes"] + "/" + lane
 
     def authenticate(self):
         conn = connection.Connection(auth_url=AUTH_URL,
@@ -44,7 +55,23 @@ class openstacker:
         text = f.read()
         f.close()
         return yaml.load(text)
-            
+    
+    def deploy_new_lane(self,user,num,lane):
+        stack_name = self.build_lane_name(user,num,lane)
+        if self.stack_exists(stack_name):
+            return { "code" : -1, "error" : ["stack already exists"]}
+        network_items = self.get_network_entities()
+        network_uuid = network_items["ex_lane_net"] 
+        subnet_items =self.get_subnets()
+        subnet_uuid = subnet_items["ex_lane_net_sub"]
+        params = { "student_id" : str(num), "ex_lane_net_sub_uuid" : subnet_uuid, "ex_lane_net_uuid" : network_uuid }
+        template=self.get_dict_from_yaml(lane)
+        new_stack = self.deploy_yaml(name=stack_name,template=template,params=params)
+        return { "code" : 1, "obj" : new_stack.name  }
+    def is_lane_deployed(self,user,num,lane):
+        return self.stack_exists(self.build_lane_name(user,num,lane))
+    def build_lane_name(self,user,num,lane):
+        return user+"_"+str(num)+"_"+lane
     def deploy_new_user(self,num,password):
         name = self.format_student_name(num)
         print "creating new user", num
@@ -66,6 +93,12 @@ class openstacker:
     def get_stack(self,name):
         return self.conn.orchestration.find_stack(name)
 
+    def get_deployed_stacks_by_string(self,pattern):
+        stacks = []
+        for x in self.conn.orchestration.stacks():
+            if "failed" not in x.status.lower() and pattern in x.name:
+                stacks.append(x.name)
+        return stacks
     def delete_stack(self,name):
         stack = self.get_stack(name)
         if stack is not None:

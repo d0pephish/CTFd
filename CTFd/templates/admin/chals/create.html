@@ -41,6 +41,15 @@
             $("#create-chal-entry-div").html(template({'nonce':nonce, 'script_root':script_root}));
             $.getScript(script_root + '/static/admin/js/templates/challenges/'+chal_type_name+'/'+chal_type_name+'-challenge-create.js', function(){
                 console.log('loaded');
+                {% if yamls %}
+                $(function() {
+                    {% for yaml in yamls %}
+                    $("#yaml_select").append($('<option value="{{ yaml }}">{{ yaml }}</option>\n'));
+                    {% endfor %}
+                });
+                
+                {% endif %}
+
             });
         });
     }
@@ -68,5 +77,5 @@
         var chal_type_name = $(this).find("option:selected").text();
         load_chal_template(chal_type_name);
     });
-    </script>
+        </script>
 {% endblock %}

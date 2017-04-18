@@ -10,6 +10,7 @@ from CTFd.utils import ctftime, view_after_ctf, authed, unix_time, get_kpm, user
 from CTFd.models import db, Challenges, Files, Solves, WrongKeys, Keys, Tags, Teams, Awards
 from CTFd.plugins.keys import get_key_class
 from CTFd.plugins.challenges import get_chal_class
+from CTFd.plugins.externals import *
 
 challenges = Blueprint('challenges', __name__)
 
@@ -42,6 +43,20 @@ def challenges_view():
         return redirect(url_for('auth.login', next='challenges'))
 
 
+@challenges.route('/deploy_lane', methods=['POST'])
+def deploy_lane():
+    if user_can_view_challenges() and (ctf_started() or is_admin()):
+        challenge_name = request.form['name'].encode('utf-8')
+        chal= Challenges.query.filter_by(name=challenge_name).first()
+        if chal != "":
+            resp = deploy_openstack_lane(session['username'],session['num'], chal.yaml_id)
+        else:
+            resp = { "code" : -1, errors : ["this challenge does not require a lane."]}
+        return jsonify(resp)
+    else:
+        return redirect(url_for('auth.login', next='chals'))
+
+
 @challenges.route('/chals', methods=['GET'])
 def chals():
     if not is_admin():
@@ -53,16 +68,22 @@ def chals():
     if user_can_view_challenges() and (ctf_started() or is_admin()):
         chals = Challenges.query.filter(or_(Challenges.hidden != True, Challenges.hidden == None)).order_by(Challenges.value).all()
         json = {'game': []}
+        deployed_lanes = get_deployed_lanes(session['username'],session['num'])
         for x in chals:
             tags = [tag.tag for tag in Tags.query.add_columns('tag').filter_by(chal=x.id).all()]
             files = [str(f.location) for f in Files.query.filter_by(chal=x.id).all()]
             chal_type = get_chal_class(x.type)
+            if x.yaml_id in deployed_lanes:
+                deployed = "deployed"
+            else:
+                deployed = "not-deployed"
             json['game'].append({
                 'id': x.id,
                 'type': chal_type.name,
                 'name': x.name,
                 'value': x.value,
-                'description': x.description,
+                'deployed' : deployed,
+                'description': x.description.replace("%STUID%",session["num"]),
                 'category': x.category,
                 'files': files,
                 'tags': tags
