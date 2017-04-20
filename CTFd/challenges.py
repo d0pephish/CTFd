@@ -48,14 +48,22 @@ def deploy_lane():
     if user_can_view_challenges() and (ctf_started() or is_admin()):
         challenge_name = request.form['name'].encode('utf-8')
         chal= Challenges.query.filter_by(name=challenge_name).first()
-        if chal != "":
+        if chal.yaml_id != "":
+            teardown_user_lanes(session['username'],session['num'])
             resp = deploy_openstack_lane(session['username'],session['num'], chal.yaml_id)
         else:
-            resp = { "code" : -1, errors : ["this challenge does not require a lane."]}
+            resp = { "code" : -1, "errors" : ["this challenge does not require a lane."]}
         return jsonify(resp)
     else:
         return redirect(url_for('auth.login', next='chals'))
 
+@challenges.route('/teardown' , methods=['POST'])
+def teardown_all_lanes():
+    if user_can_view_challenges() and (ctf_started() or is_admin()):
+        teardown_user_lanes(session['username'],session['num'])
+        return "1"
+    else:
+        return redirect(url_for('auth.login', next='chals'))
 
 @challenges.route('/chals', methods=['GET'])
 def chals():

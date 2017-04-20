@@ -1,0 +1,111 @@
+heat_template_version: "2016-10-14"
+
+description: Basics Lane 1
+#This script creates the student vm that integrates into the persistent network. Depends on persistent network existing, and then per-exercise yaml should be deployed after this. 
+
+parameters:
+
+  student_id:
+    type: string
+    label: Student ID
+    description: Student ID Number
+    constraints:
+      -  allowed_pattern: "[0-2]?[0-9][0-9]"
+         description: Student ID must be a numeric > 010 and < 250
+    default: "100"
+
+  ex_lane_net_uuid:
+    type: string
+    label: Lane Network UUID
+    description: UUID of the persistent exercise network object
+    default: c7423992-560f-4205-ae99-1a2237f0bd8e
+
+  ex_lane_net_sub_uuid:
+    type: string
+    label: Exercise Network Subnet UUID
+    description: UUID of the persistent exercise network subnet object
+    default: feb0180f-0390-44fd-8fb1-f78eb3110704
+
+resources:
+#unique string is used to randomize all instnce names, also provides entropy for scripts
+#please don't remove this one. if you need more randomization, create another
+  random-str:
+    type: OS::Heat::RandomString
+    properties:
+      length: 8
+
+
+  ex-lane-net:
+    type: OS::Neutron::Net
+    properties:
+      name: ex_lane_net
+    external_id: { get_param: ex_lane_net_uuid }
+
+  ex-lane-net-sub:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: 172.18.0.0/16
+      gateway_ip: 172.18.0.1
+      network: { get_resource: ex-lane-net }
+      name: ex_lane_net_sub
+    external_id: { get_param: ex_lane_net_sub_uuid }
+
+#student port
+  ex-lane-net-ports-box1:
+    type: OS::Neutron::Port    
+    properties:
+      port_security_enabled: false
+      network_id: { get_resource: ex-lane-net }
+      fixed_ips:
+      - subnet_id: { get_resource: ex-lane-net-sub }
+        ip_address:
+          str_replace:
+            template: 172.18.stuID.42
+            params:
+              stuID: { get_param: student_id }
+    depends_on: [ex-lane-net, ex-lane-net-sub ]
+#student station 
+  ex-stu-station:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: ex_lane_box1_stuID_randomStr
+          params:
+            stuID: { get_param: student_id }
+            randomStr: { get_resource: random-str }
+      image: Debian Jessie
+      flavor: cy.small
+      networks:
+        - port: { get_resource: ex-lane-net-ports-box1 }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash
+            echo "root:$password" | chpasswd
+            echo "harry:x:1001:1001:harry,,,:/home/harry:/bin/bash" >> /etc/passwd
+            mkdir -p /home/harry
+            chown harry:harry /home/harry
+            echo "harry:password123" | chpasswd
+            echo "root:$password" | chpasswd
+            sed -i 's/localhost.*/localhost boxHostname/g' /etc/hosts
+            echo "flag:{Wax on, wax off.}" > /etc/.flag
+            chmod 444 /etc/.flag
+            echo boxHostname>/etc/hostname
+            apt-get update && apt-get upgrade && apt dist-upgrade -y
+            apt-get install -y ssh sshd
+            sleep 30 && echo "root:$password" | chpasswd 
+            sleep 30 && echo "harry:password123" | chpasswd
+          params:
+            $password: { get_resource: random-str }
+            boxHostname: basic1_box1
+      user_data_format: RAW
+
+
+
+outputs:
+ random_str:
+    description: Random string used to seed student VMs, or in this case, set root password
+    value: { get_attr : [random-str, value] }
+
+

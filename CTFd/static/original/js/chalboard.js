@@ -22,14 +22,29 @@ function loadchalbyname(chalname) {
 
     updateChalWindow(obj);
 }
-function deploy_lane(name,obj) {
+function teardown_lanes() {
+    var nonce = $('#nonce').val();
+    $.post(script_root+ '/teardown' , {
+        nonce: nonce
+    }, function (data) {
+        alert("any running lanes have been torn down");
+        updateChalWindow();
+    });
+}
+function deploy_lane(name,o) {
     var nonce = $('#nonce').val();
     $.post(script_root+ '/deploy_lane' , {
         name: name,
         nonce: nonce
     }, function (data) {
-        alert(data);
-        $(obj).remove();
+        if(data == null || data == "null" ) {
+            alert("There is no lane to deploy");
+        } else if(data.code == "-1") {
+            alert(data.errors.join("\n"));
+        } else {
+            $(".chal-not-deployed").removeClass("chal-not-deployed").addClass("chal-deployed");
+            $("#deploy-lane").parent().remove();
+        }
     });
 }
 function updateChalWindow(obj) {

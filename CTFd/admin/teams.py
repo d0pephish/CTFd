@@ -140,6 +140,7 @@ def delete_team(teamid):
         Teams.query.filter_by(id=teamid).delete()
         db.session.commit()
         db.session.close()
+        teardown_user_lanes(user,num)
         delete_guac_user(name,num) 
     except DatabaseError:
         return '0'

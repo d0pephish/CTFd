@@ -50,6 +50,11 @@ def get_deployed_lanes(user,num):
     for x in stacks:
         new_stacks.append(x.replace(user+"_"+str(num)+"_","",1))
     return new_stacks
+def teardown_user_lanes(user,num):
+    openstacked = openstacker()
+    stacks = openstacked.get_deployed_stacks_by_string(user+"_"+str(num)+"_")
+    for x in stacks:
+        openstacked.delete_stack(x)
 def deploy_new_openstack_user(num,password):
     openstacked =  openstacker()
     trunc_password = hashlib.md5(password).hexdigest()[:8]
