@@ -17,7 +17,7 @@
                         <h5 class="chal-{{ deployed }}"></h5>
                         {{#if_eq deployed 'not-deployed'}}
                         <div>
-                            <button type="submit" id="deploy-lane" tabindex="4" class="btn btn-md btn-theme btn-outlined" onclick="javascript:if(confirm('Note, this will close down any other running challenge langes. Are you sure?'){deploy_lane('{{ name }}',this.parent);} return false;" style="height:40px">Deploy Lane</button>
+                            <button type="submit" id="deploy-lane" tabindex="4" class="btn btn-md btn-theme btn-outlined" onclick="javascript:if(confirm('Note, this will close down any other running challenge langes. Are you sure?')){deploy_lane('{{ name }}',this.parent);} return false;" style="height:40px">Deploy Lane</button>
                         </div>
                         {{/if_eq}}
                         <div class="chal-tags">
