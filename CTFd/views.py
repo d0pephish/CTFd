@@ -221,7 +221,8 @@ def profile():
 
                 if 'password' in request.form.keys() and not len(request.form['password']) == 0:
                     team.password = bcrypt_sha256.encrypt(request.form.get('password'))
-                    update_guac_password(team.name,md5(team.password).hexdigest(),team.num)
+                    session['guac_pass']=md5(team.password).hexdigest()
+                    update_guac_password(team.name,session['guac_pass'],team.num)
 
                 else:
                     update_guac_name(old_name,team.name)

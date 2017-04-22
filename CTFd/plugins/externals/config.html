@@ -1,2 +1,70 @@
 <h1> Externals Integration </h1>
-<p> Right now this page doesn't do anything. It looks like CTFd was designed to load a static config page. I have no use for a static config page, but in future releases I'll patch this so you can upload your own yamls and list them in challenges</p>
+<form onsubmit="javascript:do_upload(this); return false;" method="POST" enctype="multipart/form-data" id="upload_lane">
+<div class="row">
+    <div class="form-group">
+        <div class="col-md-9">
+            <label>Upload Lane:</label>
+                    <sub class="help-block">Attach multiple files using Control+Click or Cmd+Click.</sub>
+                    <input name="files[]" multiple="multiple" type="file">
+        </div>
+    </div>
+</div>
+<div style="text-align:center">
+    <button class="btn btn-theme btn-outlined create-challenge-submit" type="submit">Upload</button>
+</div>
+</form>
+<p> Available Lanes:</p>
+<ul id="lane-container">
+</ul>
+<div id="single-lane-container">
+</div>
+
+<script src="/static/admin/js/vendor/jquery.min.js"></script>
+<script type="text/javascript">
+function get_lane(id) {
+    $.get ( script_root + "/admin/get_lane/"+id, function(data) {
+        $("#single-lane-container").empty().append("<pre>"+data+"</pre>");
+    });
+}
+function do_upload(obj) {
+    $(obj).append($("#nonce")[0]);
+    console.log(obj);
+    formData = new FormData($(obj)[0]);
+    $.ajax({
+        url: script_root + "/admin/upload_lane",
+        type: 'POST',
+        data: formData,
+        async: false,
+        success: function(data) { 
+            if(data == "1") {
+                obj.reset();
+                get_lanes();
+            } else alert("there was an error uploading :(");
+        },
+        cache: false,
+        contentType: false,
+        processData: false
+    });
+    return false;
+}
+function lane_delete(id) {
+    $.get( script_root + "/admin/delete_lane/"+id, function(data) {
+        if(data =="1"){
+            get_lanes();
+        }
+    });
+}
+function get_lanes() {
+    $.get( script_root + "/admin/list_lanes", function(data) {
+        $("#lane-container").empty();
+        for(i=0;i<data.length;i++) {
+            li_item = $("<li />");
+            li_item.append("<a href='javascript:get_lane(\""+data[i]+"\");'>"+data[i]+"</a> <i class=\"fa fa-times\" onclick='javascript:if(confirm(\"Delete "+data[i]+"?\")){lane_delete(\""+data[i]+"\");}' style='cursor:pointer;'></i>");
+            $("#lane-container").append(li_item);
+        }
+    });
+}
+$(function() {
+    get_lanes();
+});
+</script>

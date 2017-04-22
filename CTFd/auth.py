@@ -62,7 +62,8 @@ def reset_password(data=None):
             return render_template('reset_password.html', errors=['Your link appears broken, please try again.'])
         team = Teams.query.filter_by(name=name).first_or_404()
         team.password = bcrypt_sha256.encrypt(request.form['password'].strip())
-        update_guac_password(team.name,md5(team.password).hexdigest(),team.num)
+        session['guac_pass']=md5(team.password).hexdigest()
+        update_guac_password(team.name,session['guac_pass'],team.num)
         db.session.commit()
         db.session.close()
         return redirect(url_for('auth.login'))
@@ -171,7 +172,6 @@ def login():
                 session['username'] = team.name
                 session['id'] = team.id
                 session['admin'] = team.admin
-                print "user with num "+team.num + " logged in"
                 session['num'] = team.num
                 session['guac_pass'] = md5(team.password).hexdigest()
                 session['nonce'] = sha512(os.urandom(10))

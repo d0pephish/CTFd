@@ -26,12 +26,18 @@ def create_new_guac_user(name,password,num):
             username="%s"
             password="%s"
             encoding="md5">
+        <connection name="GUI">
         <protocol>vnc</protocol>
         <param name="hostname">%s</param>
         <param name="port">5901</param>
         <param name="password">%s</param>
+        </connection>
+        <connection name="SSH">
+            <protocol>ssh</protocol>
+            <param name="hostname">%s</param>
+        </connection>
     </authorize>"""
-    config = field % (name,h,hostname,h)
+    config = field % (name,h,hostname,h,hostname)
     if os.path.isfile(GUAC_CONF):
         f = open(GUAC_CONF,"r")
         config_text = f.read()
@@ -41,6 +47,21 @@ def create_new_guac_user(name,password,num):
         f.write(config_text)
         f.close()
         restart_guac()
+def get_yamls_contents(name):
+    if name in list_available_yamls():
+        return openstacker.get_yaml_contents(openstacker,name)
+    else:
+        return ""
+def delete_yaml(name):
+    if name in list_available_yamls():
+        path = os.path.join(openstacker.yaml_paths["lanes"], name)
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                return '1'
+            except:
+                return '0'
+    return '-1'
 def list_available_yamls():
     return openstacker.list_available_lanes(openstacker)
 def get_deployed_lanes(user,num):
@@ -89,22 +110,23 @@ def update_guac_name(old,new):
     f.close()
     restart_guac()
     
-def delete_guac_user(name,num):
+def delete_guac_user(name,num,station=True):
     if os.path.isfile(GUAC_CONF):
         f = open(GUAC_CONF,"r")
         config_text = f.read()
         f.close()
-        new_text = re.sub('<authorize\W*?username="test".*?</authorize>','',config_text, flags=re.DOTALL)
+        new_text = re.sub('<authorize\W*?username="'+name+'".*?</authorize>','',config_text, flags=re.DOTALL)
         f = open(GUAC_CONF,"w")
         f.write(new_text)
         f.close()
     if str(num) != "000" and num != "---":
         open("%s/%s" % (EXTERNALS_DIR,num), 'a').close()
     restart_guac()
-    openstacked = openstacker()
-    openstacked.delete_user(num)
+    if(station):
+        openstacked = openstacker()
+        openstacked.delete_user(num)
 
 def update_guac_password(name,password,num):
-    delete_guac_user(name,num)
+    delete_guac_user(name,num, station=False)
     create_new_guac_user(name,password,num)
     

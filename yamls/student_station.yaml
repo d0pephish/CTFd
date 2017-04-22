@@ -115,6 +115,8 @@ resources:
             sed -i 's/^\[SeatDefaults\]/\[SeatDefaults\]\nuser-session=mate\n/' /etc/lightdm/lightdm.conf
             egrep "^\[SeatDefaults" -A 2 /etc/lightdm/lightdm.conf
             echo 172.17.17.76 students exercises hack.lab lab labs exercises >> /etc/hosts
+            sed -i 's/^PermitRootLogin.*/PermitRootLogin Yes/' /etc/ssh/sshd_config
+            service ssh restart
             echo 172.17.17.76 students exercises hack.lab lab labs exercises >> /etc/cloud/templates/hosts.debian.tmpl
             echo 172.17.17.76 students exercises hack.lab lab labs exercises >> /etc/cloud/templates/hosts.suse.tmpl
             echo 172.17.17.76 students exercises hack.lab lab labs exercises >> /etc/cloud/templates/hosts.redhat.tmpl

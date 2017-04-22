@@ -15,9 +15,16 @@ class openstacker:
             if f.endswith(".yaml"):
                 yaml_list.append(f)
         return yaml_list
-   
+    @staticmethod
+    def get_yaml_contents(self, name):
+        for p in self.list_available_lanes(self):
+            if p == name:
+                f = open(self.yaml_paths["lanes"] + "/" + p , "r")
+                txt = f.read();
+                f.close()
+                return txt
+        return ""
     def __init__(self):
-        print "Openstacker Initialized"
         self.conn = self.authenticate()
         for lane in self.list_available_lanes(self):
             self.yaml_paths[lane] = self.yaml_paths["lanes"] + "/" + lane

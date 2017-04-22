@@ -1,4 +1,5 @@
 from flask import current_app as app, render_template, request, redirect, jsonify, url_for, Blueprint
+from cgi import escape
 from CTFd.utils import admins_only, is_admin, unix_time, get_config, \
     set_config, sendmail, rmdir, create_image, delete_image, run_image, container_status, container_ports, \
     container_stop, container_start, get_themes, cache, upload_file
@@ -6,6 +7,7 @@ from CTFd.models import db, Teams, Solves, Awards, Containers, Challenges, Wrong
 from passlib.hash import bcrypt_sha256
 from sqlalchemy.sql import not_
 from CTFd.plugins.externals import *
+from werkzeug.utils import secure_filename
 
 admin_teams = Blueprint('admin_teams', __name__)
 
@@ -140,12 +142,40 @@ def delete_team(teamid):
         Teams.query.filter_by(id=teamid).delete()
         db.session.commit()
         db.session.close()
-        teardown_user_lanes(user,num)
+        teardown_user_lanes(name,num)
         delete_guac_user(name,num) 
     except DatabaseError:
         return '0'
     else:
         return '1'
+
+@admin_teams.route('/admin/get_lane/<yaml_id>', methods=['GET'])
+@admins_only
+def get_lane(yaml_id):
+    return escape(get_yamls_contents(yaml_id))
+
+@admin_teams.route('/admin/delete_lane/<yaml_id>', methods=['GET'])
+@admins_only
+def delete_lane(yaml_id):
+        return delete_yaml(yaml_id);
+
+@admin_teams.route('/admin/upload_lane', methods=['POST'])
+@admins_only
+def upload_lane():
+    files = request.files.getlist('files[]')
+
+    for f in files:
+        filename = secure_filename(f.filename)
+        if len(filename) <= 0:
+            return -1;
+        f.save(os.path.join(openstacker.yaml_paths["lanes"], filename))
+    return '1'
+
+
+@admin_teams.route('/admin/list_lanes', methods=['GET'])
+@admins_only
+def list_lanes():
+    return jsonify(list_available_yamls())
 
 
 @admin_teams.route('/admin/solves/<teamid>', methods=['GET'])
