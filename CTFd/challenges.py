@@ -75,9 +75,12 @@ def chals():
                 return redirect(url_for('views.static_html'))
     if user_can_view_challenges() and (ctf_started() or is_admin()):
         chals = Challenges.query.filter(or_(Challenges.hidden != True, Challenges.hidden == None)).order_by(Challenges.value).all()
-        json = {'game': []}
+        solved = [r.name for r in db.session.query(Challenges.name).join(Solves, Solves.chalid == Challenges.id).join(Teams, Solves.teamid == Teams.id).filter(Teams.name==session['username']).all() ]
+        json = {'game': [] }
         deployed_lanes = get_deployed_lanes(session['username'],session['num'])
         for x in chals:
+            if x.dependency != "" and x.dependency not in solved:
+                continue
             tags = [tag.tag for tag in Tags.query.add_columns('tag').filter_by(chal=x.id).all()]
             files = [str(f.location) for f in Files.query.filter_by(chal=x.id).all()]
             chal_type = get_chal_class(x.type)

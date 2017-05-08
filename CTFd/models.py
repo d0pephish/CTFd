@@ -72,7 +72,8 @@ class DeployedYamls(db.Model):
 
 class Challenges(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80))
+    name = db.Column(db.String(80), unique=True)
+    dependency = db.Column(db.String(80), default='')
     description = db.Column(db.Text)
     max_attempts = db.Column(db.Integer, default=0)
     value = db.Column(db.Integer)
@@ -81,15 +82,16 @@ class Challenges(db.Model):
     type = db.Column(db.Integer)
     hidden = db.Column(db.Boolean)
 
-    def __init__(self, name, description, value, category, type=0, yaml_id = ""):
+    def __init__(self, name, description, value, category, type=0, yaml_id = "", dependency=""):
         self.name = name
         self.description = description
         self.value = value
+        self.dependency = dependency
         self.category = category
         self.yaml_id = yaml_id
         self.type = type
         # self.flags = json.dumps(flags)
-
+    
     def __repr__(self):
         return '<chal %r>' % self.name
 

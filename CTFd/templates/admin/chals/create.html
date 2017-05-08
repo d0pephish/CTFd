@@ -49,6 +49,14 @@
                 });
                 
                 {% endif %}
+                {% if chalnames %}
+                $(function() {
+                    {% for n in chalnames %}
+                    $("#dependency_select").append($('<option value="{{ n }}">{{ n }}</option>\n'));
+                    {% endfor %}
+                });
+                
+                {% endif %}
 
             });
         });

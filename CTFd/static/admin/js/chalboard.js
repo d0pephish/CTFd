@@ -57,6 +57,7 @@ function loadchal(id, update) {
     $('.chal-category').val(obj.category);
     $('.chal-id').val(obj.id);
     $("#yaml_select").val(obj.yaml_id);
+    $("#dependency_select").val(obj.dependency);
     $('.chal-hidden').prop('checked', false);
     if (obj.hidden) {
         $('.chal-hidden').prop('checked', true);
