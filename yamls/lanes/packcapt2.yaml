@@ -1,6 +1,6 @@
 heat_template_version: "2016-10-14"
 
-description: Basic Traffic Capture
+description: Basic Traffic Capture with some iptables on the side
 
 parameters:
 
@@ -182,7 +182,7 @@ resources:
             echo "root:$password" | chpasswd
             echo "nameserver 8.8.8.8" > /etc/resolv.conf
             sleep 10 && apt-get update && apt-get upgrade -y && apt dist-upgrade -y && apt-get install -y telnet
-            printf "(sleep 1; echo supersekurepasswordovertelnetisnopasswordatall; sleep 1; echo 'ls -al '; sleep 1; echo 'exit';) | telnet -l larry 172.20.2.44" > /script
+            printf "(sleep 1; echo 7f90d6341acb5a18f790156553d1f101cb02457f; sleep 1; echo 'ls -al '; sleep 1; echo 'exit';) | telnet -l larry 172.20.2.44" > /script
             chmod 700 /script 
             crontab -l | { cat; echo "* * * * * /script"; } | crontab - ;  
           params:
@@ -210,6 +210,8 @@ resources:
         str_replace:
           template: |
             #!/bin/bash
+            ifconfig eth2 172.20.2.stuID netmask 255.255.255.0
+            ifconfig eth1 172.20.1.stuID netmask 255.255.255.0
             echo "root:$password" | chpasswd
             echo "harry:x:1001:1001:harry,,,:/home/harry:/bin/bash" >> /etc/passwd
             mkdir -p /home/harry
@@ -220,8 +222,6 @@ resources:
             echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
             echo "harry ALL=(ALL:ALL) ALL" >> /etc/sudoers
             sysctl -p /etc/sysctl.conf
-            ifconfig eth2 172.20.2.stuID netmask 255.255.255.0
-            ifconfig eth1 172.20.1.stuID netmask 255.255.255.0
             echo "nameserver 8.8.8.8" > /etc/resolv.conf
             iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
             echo boxHostname>/etc/hostname
@@ -231,8 +231,8 @@ resources:
             sleep 30 && echo "harry:password123" | chpasswd
           params:
             $password: { get_resource: random-str }
-            stuID: { get_param: student_id }
             boxHostname: basics1_box1
+            stuID: { get_param: student_id }
       user_data_format: RAW
 
   box2:
@@ -252,14 +252,17 @@ resources:
         str_replace:
           template: |
             #!/bin/bash
+            iptables -I INPUT -j DROP
+            iptables -I INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+            iptables -I INPUT -s 172.20.1.33 -j ACCEPT
             echo "root:$password" | chpasswd
             echo "nameserver 8.8.8.8" > /etc/resolv.conf
-            apt-get update && apt-get upgrade -y && apt dist-upgrade -y && apt-get install -y telnetd
+            sleep 30 && apt-get update && apt-get upgrade -y && apt dist-upgrade -y && apt-get install -y telnetd
             echo "larry:x:1001:1001:larry,,,:/home/larry:/bin/bash" >> /etc/passwd
             mkdir -p /home/larry
-            echo "flag: {Open gate, walk through gate, close gate}" > /home/larry/.flag
+            echo "flag: {People sometimes make mistakes.}" > /home/larry/.flag
             chown -R larry:larry /home/larry
-            echo "larry:supersekurepasswordovertelnetisnopasswordatall" | chpasswd
+            echo "larry:7f90d6341acb5a18f790156553d1f101cb02457f" | chpasswd
             echo "root:$password" | chpasswd
             echo boxHostname > /etc/hostname
           params:

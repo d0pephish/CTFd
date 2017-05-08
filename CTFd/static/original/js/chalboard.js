@@ -29,6 +29,7 @@ function teardown_lanes() {
     }, function (data) {
         alert("any running lanes have been torn down");
         updateChalWindow();
+        update();
     });
 }
 function deploy_lane(name,o) {
@@ -146,6 +147,7 @@ function submitkey(chal, key, nonce) {
             answer_input.val("");
             answer_input.removeClass("wrong");
             answer_input.addClass("correct");
+            update();
         }
         else if (result.status == 2){ // Challenge already solved
             result_notification.addClass('alert alert-info alert-dismissable');
@@ -324,6 +326,7 @@ function update(){
 
 $(function() {
     loadchals();
+    setInterval(update, 300000);
 });
 
 $('.nav-tabs a').click(function (e) {
@@ -336,4 +339,3 @@ $('#chal-window').on('hidden.bs.modal', function() {
     history.replaceState('', document.title, window.location.pathname);
 });
 
-setInterval(update, 300000);

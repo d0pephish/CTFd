@@ -129,7 +129,7 @@ class Config(object):
        -> both of these values are used by openstack to build a user-specific subnet
     '''
     MAX_STU_NUM = 250
-    MIN_STU_NUM = 10
+    MIN_STU_NUM = 100
 
     '''
     CACHE_TYPE specifies how CTFd should cache configuration values. If CACHE_TYPE is set to 'redis', CTFd will make use
