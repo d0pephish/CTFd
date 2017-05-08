@@ -168,6 +168,8 @@ def upload_lane():
         filename = secure_filename(f.filename)
         if len(filename) <= 0:
             return -1;
+        if filename[-5:] != ".yaml":
+            return -1
         f.save(os.path.join(openstacker.yaml_paths["lanes"], filename))
     return '1'
 

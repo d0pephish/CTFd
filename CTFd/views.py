@@ -47,13 +47,19 @@ def setup():
 
             # Index page
             page = Pages('index', """<div class="container main-container">
-    <img class="logo" src="{0}/static/original/img/logo.png" />
+    <img class="logo" src="/static/original/img/logo.png" />
     <h3 class="text-center">
-        Welcome to a cool CTF framework written by <a href="https://github.com/ColdHeat">Kevin Chung</a> of <a href="https://github.com/isislab">@isislab</a>
+        Welcome to the at-your-own-pace, no-contractor-needed, browser-based cyber training interface.        
+    </h3>
+    <h3 class="text-center">
+       You will find interactive, CTF-style challenges that will introduce you to basic concepts like command-line usage and slowly work your way to more complex concepts.
     </h3>
 
     <h4 class="text-center">
-        <a href="{0}/admin">Click here</a> to login and setup your CTF
+        <a href="/register">Click here</a> to register and get your own workstation.
+    </h4>
+    <h4 class="text-center">
+        <a href="/help">At any time if you get stuck, you'll find hints for each challenge here</a>
     </h4>
 </div>""".format(request.script_root))
 

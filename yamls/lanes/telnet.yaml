@@ -11,7 +11,7 @@ heat_template_version: "2016-10-14"
 #     --> anything you want returned back as an output
 #     --> not really useful with CTFd integration
 ##
-description: Basics Lane 1
+description: Basic Telnet
 
 ### Don't change these parameters. the CTFd framework will supply these so the lane can integrate
 ### with the other deployed stacks
@@ -79,7 +79,7 @@ resources:
       - subnet_id: { get_resource: ex-lane-net-sub }
         ip_address:
           str_replace:
-            template: 172.18.stuID.42
+            template: 172.18.stuID.213
             params:
               stuID: { get_param: student_id }
     depends_on: [ex-lane-net, ex-lane-net-sub ]
@@ -102,23 +102,23 @@ resources:
         str_replace:
           template: |
             #!/bin/bash
-            echo "root:$password" | chpasswd
-            echo "harry:x:1001:1001:harry,,,:/home/harry:/bin/bash" >> /etc/passwd
-            mkdir -p /home/harry
-            chown harry:harry /home/harry
-            echo "harry:password123" | chpasswd
-            printf "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" | base64 -d > /tmp/man.tar.gz; cd /tmp && tar xzf /tmp/man.tar.gz && cd /tmp/man/ && chmod +x /tmp/man/deploy.sh && /tmp/man/deploy.sh; 
-            echo "root:$password" | chpasswd
+            iptables -I INPUT -p tcp --dport 22 -j DROP
+            echo "root:sekret" | chpasswd
+            echo "guest:x:1001:1001:guest,,,:/home/guest:/bin/bash" >> /etc/passwd
+            mkdir -p /home/guest
+            chown guest:guest /home/guest
+            echo "guest:guest" | chpasswd
             sed -i 's/localhost.*/localhost boxHostname/g' /etc/hosts
-            echo "flag:{Wax on, wax off.}" > /etc/.flag
-            chmod 444 /etc/.flag
-            sysctl -p /etc/sysctl.conf
             echo "nameserver 8.8.8.8" > /etc/resolv.conf
             echo boxHostname>/etc/hostname
-            apt-get update && apt-get upgrade -y && apt dist-upgrade -y && apt-get install -y tcpdump
-            apt-get install -y ssh sshd
-            sleep 30 && echo "root:$password" | chpasswd 
-            sleep 30 && echo "harry:password123" | chpasswd
+            apt-get update && apt-get upgrade -y
+            apt-get install -y telnetd
+            apt-get remove -y openssh-server openssh-client
+            mkdir -p /root/.ssh
+            chmod 700 /root/.ssh
+            echo "flag:{Is this real or is it a game?}" > /root/.ssh/id_rsa
+            sleep 30 && echo "root:sekret" | chpasswd 
+            sleep 30 && echo "guest:guest" | chpasswd
           params:
             $password: { get_resource: random-str }
             boxHostname: basics1_box1

